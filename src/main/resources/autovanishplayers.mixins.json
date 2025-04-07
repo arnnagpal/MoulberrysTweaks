@@ -1,11 +1,20 @@
 {
   "required": true,
-  "package": "com.moulberry.autovanishplayers.mixin",
+  "package": "com.moulberry.moulberrystweaks.mixin",
   "compatibilityLevel": "JAVA_21",
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
-    "MixinLivingEntityRenderer"
+    "MixinClientPacketListener",
+    "MixinGui",
+    "MixinLivingEntityRenderer",
+    "MixinLoadingOverlay",
+    "MixinLocalPlayer"
+  ],
+  "mixins": [
+    "MixinEntity",
+    "MixinLivingEntity",
+    "MixinPlayer"
   ]
 }

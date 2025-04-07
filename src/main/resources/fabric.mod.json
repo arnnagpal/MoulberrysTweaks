@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "autovanishplayers",
+	"id": "moulberrystweaks",
 	"version": "${version}",
-	"name": "AutoVanishPlayers",
-	"description": "Automatically make players invisible as you approach them. Useful for Parkour in multiplayer",
+	"name": "Moulberry's Tweaks",
+	"description": "Tweaks made by Moulberry. Some might be useful, others might not",
 	"authors": [
 		"Moulberry"
 	],
@@ -15,7 +15,7 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-          "com.moulberry.autovanishplayers.AutoVanishPlayers"
+          "com.moulberry.moulberrystweaks.MoulberrysTweaks"
 		]
 	},
 	"mixins": [

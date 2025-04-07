@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.7-SNAPSHOT'
+	id 'fabric-loom' version '1.10-SNAPSHOT'
 	id 'maven-publish'
 }
 
@@ -20,6 +20,8 @@ repositories {
 }
 
 loom {
+    accessWidenerPath.set(new File(rootDir, "src/main/resources/moulberrystweaks.accesswidener"))
+
 	mods {
 		"autovanishplayers" {
 			sourceSet sourceSets.main
