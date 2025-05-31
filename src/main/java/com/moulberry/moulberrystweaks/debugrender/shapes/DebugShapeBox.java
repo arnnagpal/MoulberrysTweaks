@@ -16,7 +16,7 @@ import org.joml.Quaternionf;
 
 import java.util.function.Consumer;
 
-public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionf rotation, int faceArgb, int lineArgb, double lineThickness) implements DebugShape {
+public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionf rotation, int faceArgb, int lineArgb, float lineThickness) implements DebugShape {
 
     public static final StreamCodec<RegistryFriendlyByteBuf, DebugShapeBox> STREAM_CODEC = StreamCodec.composite(
         Vec3.STREAM_CODEC,
@@ -29,7 +29,7 @@ public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionf rotation, int fa
         DebugShapeBox::faceArgb,
         ByteBufCodecs.INT,
         DebugShapeBox::lineArgb,
-        ByteBufCodecs.DOUBLE,
+        ByteBufCodecs.FLOAT,
         DebugShapeBox::lineThickness,
         DebugShapeBox::new
     );
@@ -162,9 +162,9 @@ public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionf rotation, int fa
             try (MeshData meshData = bufferBuilder.build()) {
                 if (showThroughWalls && (flags & FLAG_FULL_OPACITY_BEHIND_WALLS) == 0) {
                     render.accept(new RenderJob(meshData, RenderType.debugLine(this.lineThickness), WHITE));
-                    render.accept(new RenderJob(meshData, CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH.apply(this.lineThickness), QUARTER_OPACITY));
+                    render.accept(new RenderJob(meshData, CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH.apply((double) this.lineThickness), QUARTER_OPACITY));
                 } else {
-                    RenderType renderType = showThroughWalls ? CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH.apply(this.lineThickness) : RenderType.debugLine(this.lineThickness);
+                    RenderType renderType = showThroughWalls ? CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH.apply((double) this.lineThickness) : RenderType.debugLine(this.lineThickness);
                     render.accept(new RenderJob(meshData, renderType, WHITE));
                 }
             }

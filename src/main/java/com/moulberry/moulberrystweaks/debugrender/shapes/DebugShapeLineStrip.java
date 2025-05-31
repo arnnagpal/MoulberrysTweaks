@@ -15,14 +15,14 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 import java.util.function.Consumer;
 
-public record DebugShapeLineStrip(List<Vec3> points, int argb, double lineThickness) implements DebugShape {
+public record DebugShapeLineStrip(List<Vec3> points, int argb, float lineThickness) implements DebugShape {
 
     public static final StreamCodec<FriendlyByteBuf, DebugShapeLineStrip> STREAM_CODEC = StreamCodec.composite(
         Vec3.STREAM_CODEC.apply(ByteBufCodecs.list()),
         DebugShapeLineStrip::points,
         ByteBufCodecs.INT,
         DebugShapeLineStrip::argb,
-        ByteBufCodecs.DOUBLE,
+        ByteBufCodecs.FLOAT,
         DebugShapeLineStrip::lineThickness,
         DebugShapeLineStrip::new
     );
@@ -77,10 +77,10 @@ public record DebugShapeLineStrip(List<Vec3> points, int argb, double lineThickn
 
             try (MeshData meshData = bufferBuilder.build()) {
                 if (showThroughWalls && (flags & FLAG_FULL_OPACITY_BEHIND_WALLS) == 0) {
-                    render.accept(new RenderJob(meshData, CustomRenderTypes.LINE_STRIP.apply(this.lineThickness), WHITE));
-                    render.accept(new RenderJob(meshData, CustomRenderTypes.LINE_STRIP_WITHOUT_DEPTH.apply(this.lineThickness), QUARTER_OPACITY));
+                    render.accept(new RenderJob(meshData, CustomRenderTypes.LINE_STRIP.apply((double) this.lineThickness), WHITE));
+                    render.accept(new RenderJob(meshData, CustomRenderTypes.LINE_STRIP_WITHOUT_DEPTH.apply((double) this.lineThickness), QUARTER_OPACITY));
                 } else {
-                    RenderType renderType = showThroughWalls ? CustomRenderTypes.LINE_STRIP_WITHOUT_DEPTH.apply(this.lineThickness) : CustomRenderTypes.LINE_STRIP.apply(this.lineThickness);
+                    RenderType renderType = showThroughWalls ? CustomRenderTypes.LINE_STRIP_WITHOUT_DEPTH.apply((double) this.lineThickness) : CustomRenderTypes.LINE_STRIP.apply((double) this.lineThickness);
                     render.accept(new RenderJob(meshData, renderType, WHITE));
                 }
             }
