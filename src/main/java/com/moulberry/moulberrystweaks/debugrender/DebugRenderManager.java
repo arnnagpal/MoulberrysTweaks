@@ -68,7 +68,7 @@ public class DebugRenderManager {
     public static void clear() {
         shapeInstances.forEach(RenderedShapeInstance::close);
         shapeInstances.clear();
-        sortedShapeInstances.clear();
+        sortedShapeInstances = null;
         shapeInstancesByResourceLocation.clear();
         availableNamespaces.clear();
     }
