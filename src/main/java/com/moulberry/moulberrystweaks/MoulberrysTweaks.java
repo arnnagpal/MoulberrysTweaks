@@ -27,6 +27,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -120,37 +121,15 @@ public class MoulberrysTweaks implements ModInitializer {
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, "moulberrystweaks.keybind"));
         }
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> {
-            var command = Commands.literal("add").executes(cmd -> {
-                ServerPlayer serverPlayer = cmd.getSource().getPlayer();
-                ServerPlayNetworking.send(serverPlayer, new DebugRenderAddPacket(Optional.of(ResourceLocation.fromNamespaceAndPath("test", "test")),
-                    new DebugShapeEllipsoid(new Vec3(-192, 73, 79), new Vec3(1, 2, 1), new Quaternionf(),
-                        0x80FFFF00, 4), 0, 0)
-                );
-                return 0;
-            });
-            dispatcher.register(command);
-
-            command = Commands.literal("remove").executes(cmd -> {
-                ServerPlayer serverPlayer = cmd.getSource().getPlayer();
-                ServerPlayNetworking.send(serverPlayer, new DebugRenderRemovePacket(ResourceLocation.parse("hello")));
-                return 0;
-            });
-            dispatcher.register(command);
-
-            command = Commands.literal("clear").executes(cmd -> {
-                ServerPlayer serverPlayer = cmd.getSource().getPlayer();
-                ServerPlayNetworking.send(serverPlayer, new DebugRenderClearNamespacePacket("minecraft"));
-                return 0;
-            });
-            dispatcher.register(command);
-        });
-
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             DebugRenderManager.clear();
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            DebugRenderManager.clear();
+        });
+
+        ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((handler, client) -> {
             DebugRenderManager.clear();
         });
 
@@ -297,7 +276,7 @@ public class MoulberrysTweaks implements ModInitializer {
                 return 0;
             });
             debugRenderShow.then(ClientCommandManager.argument("namespace", StringArgumentType.word()).suggests((commandContext, suggestionsBuilder) -> {
-                for (String namespace : DebugRenderManager.hiddenNamespaces) {
+                for (String namespace : DebugRenderManager.isAllHidden() ? DebugRenderManager.availableNamespaces : DebugRenderManager.hiddenNamespaces) {
                     suggestionsBuilder.suggest(namespace);
                 }
                 return suggestionsBuilder.buildFuture();

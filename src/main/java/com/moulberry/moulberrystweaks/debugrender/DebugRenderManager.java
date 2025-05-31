@@ -73,6 +73,10 @@ public class DebugRenderManager {
         availableNamespaces.clear();
     }
 
+    public static boolean isAllHidden() {
+        return allHidden;
+    }
+
     public static boolean showAll() {
         if (allHidden) {
             allHidden = false;
