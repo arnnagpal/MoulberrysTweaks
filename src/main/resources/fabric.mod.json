@@ -11,15 +11,18 @@
 		"sources": "https://github.com/Moulberry/AutoVanishPlayers"
 	},
 	"license": "MIT",
-	"icon": "assets/autovanishplayers/icon.png",
+	"icon": "assets/moulberrystweaks/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
           "com.moulberry.moulberrystweaks.MoulberrysTweaks"
-		]
-	},
+		],
+        "modmenu": [
+          "com.moulberry.moulberrystweaks.MoulberrysTweaksModMenuApiImpl"
+        ]
+    },
 	"mixins": [
-		"autovanishplayers.mixins.json"
+		"moulberrystweaks.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.15.11",

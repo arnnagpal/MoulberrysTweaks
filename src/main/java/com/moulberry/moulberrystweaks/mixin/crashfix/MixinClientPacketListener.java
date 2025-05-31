@@ -1,4 +1,4 @@
-package com.moulberry.moulberrystweaks.mixin;
+package com.moulberry.moulberrystweaks.mixin.crashfix;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;

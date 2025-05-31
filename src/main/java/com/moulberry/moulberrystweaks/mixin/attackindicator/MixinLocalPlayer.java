@@ -1,7 +1,5 @@
-package com.moulberry.moulberrystweaks.mixin;
+package com.moulberry.moulberrystweaks.mixin.attackindicator;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.authlib.GameProfile;
 import com.moulberry.moulberrystweaks.DebugMovementData;
 import com.moulberry.moulberrystweaks.ext.LocalPlayerExt;
@@ -14,7 +12,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec2;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,7 +19,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LocalPlayer.class)
 public abstract class MixinLocalPlayer extends Player implements LocalPlayerExt {
@@ -32,9 +28,6 @@ public abstract class MixinLocalPlayer extends Player implements LocalPlayerExt 
     public ClientPacketListener connection;
     @Unique
     private int visualAttackStrengthTicker = 0;
-
-    @Unique
-    private final DebugMovementData debugMovementData = new DebugMovementData();
 
     public MixinLocalPlayer(Level level, BlockPos blockPos, float f, GameProfile gameProfile) {
         super(level, blockPos, f, gameProfile);
@@ -59,6 +52,9 @@ public abstract class MixinLocalPlayer extends Player implements LocalPlayerExt 
     public void mt$incrementVisualAttackStrengthScale() {
         this.visualAttackStrengthTicker += 1;
     }
+
+    @Unique
+    private final DebugMovementData debugMovementData = new DebugMovementData();
 
     @Override
     public DebugMovementData mt$getDebugMovementData() {

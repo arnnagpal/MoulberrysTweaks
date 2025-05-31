@@ -1,10 +1,9 @@
-package com.moulberry.moulberrystweaks.mixin;
+package com.moulberry.moulberrystweaks.mixin.autovanish;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.moulberry.moulberrystweaks.MoulberrysTweaks;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;

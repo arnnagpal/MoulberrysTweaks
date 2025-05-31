@@ -1,0 +1,26 @@
+{
+  "required": true,
+  "package": "com.moulberry.moulberrystweaks.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "MixinLoadingOverlay",
+    "attackindicator.MixinGui",
+    "attackindicator.MixinLocalPlayer",
+    "attackindicator.MixinPlayer",
+    "autovanish.MixinLivingEntityRenderer",
+    "confirmdisconnect.MixinPauseScreen",
+    "crashfix.MixinClientPacketListener",
+    "debugmovement.MixinEntity",
+    "debugmovement.MixinLivingEntity",
+    "debugshape.MixinLevelRenderer",
+    "inventorywidgets.MixinAbstractContainerScreen",
+    "inventorywidgets.MixinConnection",
+    "packetexceptionlogging.MixinConnection"
+  ],
+  "mixins": [
+    "ignorenarratorerror.MixinNarrator"
+  ]
+}

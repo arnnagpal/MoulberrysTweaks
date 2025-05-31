@@ -1,8 +1,6 @@
-package com.moulberry.moulberrystweaks.mixin;
+package com.moulberry.moulberrystweaks.mixin.debugmovement;
 
-import com.moulberry.moulberrystweaks.DebugMovementData;
 import com.moulberry.moulberrystweaks.ext.LocalPlayerExt;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;

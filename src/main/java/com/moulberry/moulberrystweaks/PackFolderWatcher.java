@@ -61,7 +61,7 @@ public class PackFolderWatcher {
     }
 
     public static void tick() {
-        if (!Features.automaticPackReload) {
+        if (!MoulberrysTweaks.config.automaticPackReload) {
             if (watcher != null) {
                 try {
                     watcher.close();
