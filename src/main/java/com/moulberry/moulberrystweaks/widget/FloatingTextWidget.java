@@ -86,7 +86,7 @@ public class FloatingTextWidget {
         this.lines.addAll(lines);
 
         if (this.automaticWidth) {
-            int maxWidth = 32;
+            int maxWidth = this.windowWidth - PADDING*2;
             for (FormattedText line : lines) {
                 maxWidth = Math.max(maxWidth, this.font.width(line));
             }

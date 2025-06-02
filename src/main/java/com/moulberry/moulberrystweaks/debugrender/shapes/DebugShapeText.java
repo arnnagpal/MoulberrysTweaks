@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
@@ -34,11 +35,11 @@ public record DebugShapeText(Vec3 position, Component component, boolean shadow,
 
     @Override
     public RenderMethod renderMethod() {
-        return RenderMethod.IMMEDIATE;
+        return RenderMethod.WORLD_IMMEDIATE;
     }
 
     @Override
-    public void renderImmediate(PoseStack poseStack, MultiBufferSource.BufferSource multiBufferSource, Camera camera, int flags) {
+    public void renderWorldImmediate(PoseStack poseStack, MultiBufferSource.BufferSource multiBufferSource, Camera camera, int flags) {
         boolean showThroughWalls = (flags & FLAG_SHOW_THROUGH_WALLS) != 0;
 
         Vec3 cameraPosition = camera.getPosition();
@@ -50,19 +51,25 @@ public record DebugShapeText(Vec3 position, Component component, boolean shadow,
         poseStack.mulPose(quaternionf);
 
         Font font = Minecraft.getInstance().font;
-        int width = font.width(this.component);
+        var lines = font.split(this.component, 1000);
+        float y = -lines.size()*font.lineHeight/2f;
+        for (FormattedCharSequence line : lines) {
+            int width = font.width(line);
 
-        if (showThroughWalls && (flags & FLAG_FULL_OPACITY_BEHIND_WALLS) == 0) {
-            poseStack.translate(0, 0, -0.05);
-            font.drawInBatch(this.component, -width/2f, -font.lineHeight/2f, 0x40FFFFFF, false, poseStack.last().pose(),
-                multiBufferSource, Font.DisplayMode.SEE_THROUGH, 0, 0xF000F0);
-            poseStack.translate(0, 0, 0.05);
-            font.drawInBatch(this.component, -width/2f, -font.lineHeight/2f, -1, this.shadow, poseStack.last().pose(),
-                multiBufferSource, Font.DisplayMode.POLYGON_OFFSET, this.backgroundColor, 0xF000F0);
-        } else {
-            Font.DisplayMode displayMode = showThroughWalls ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.POLYGON_OFFSET;
-            font.drawInBatch(this.component, -width/2f, -font.lineHeight/2f, -1, this.shadow, poseStack.last().pose(),
-                multiBufferSource, displayMode, this.backgroundColor, 0xF000F0);
+            if (showThroughWalls && (flags & FLAG_FULL_OPACITY_BEHIND_WALLS) == 0) {
+                poseStack.translate(0, 0, -0.05);
+                font.drawInBatch(line, -width/2f, y, 0x40FFFFFF, false, poseStack.last().pose(),
+                    multiBufferSource, Font.DisplayMode.SEE_THROUGH, 0, 0xF000F0);
+                poseStack.translate(0, 0, 0.05);
+                font.drawInBatch(line, -width/2f, y, -1, this.shadow, poseStack.last().pose(),
+                    multiBufferSource, Font.DisplayMode.POLYGON_OFFSET, this.backgroundColor, 0xF000F0);
+            } else {
+                Font.DisplayMode displayMode = showThroughWalls ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.POLYGON_OFFSET;
+                font.drawInBatch(line, -width/2f, y, -1, this.shadow, poseStack.last().pose(),
+                    multiBufferSource, displayMode, this.backgroundColor, 0xF000F0);
+            }
+
+            y += font.lineHeight;
         }
 
         poseStack.popPose();

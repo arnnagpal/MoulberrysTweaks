@@ -55,7 +55,7 @@ public class MixinLevelRenderer {
             modelViewStack.pushMatrix();
             modelViewStack.identity();
 
-            DebugRenderManager.render(poseStack, camera);
+            DebugRenderManager.renderWorld(poseStack, camera);
 
             this.renderBuffers.bufferSource().endBatch();
 

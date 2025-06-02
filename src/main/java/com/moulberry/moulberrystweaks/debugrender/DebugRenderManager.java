@@ -11,66 +11,100 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.moulberry.moulberrystweaks.debugrender.shapes.DebugShape;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.FogParameters;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class DebugRenderManager {
 
+    public static final ReentrantLock lock = new ReentrantLock();
+
+    private static boolean allHidden = false;
     public static final LinkedHashSet<String> availableNamespaces = new LinkedHashSet<>();
     public static final LinkedHashSet<String> hiddenNamespaces = new LinkedHashSet<>();
+
     private static final Map<ResourceLocation, RenderedShapeInstance> shapeInstancesByResourceLocation = new LinkedHashMap<>();
     private static final List<RenderedShapeInstance> shapeInstances = new ArrayList<>();
-    private static List<RenderedShapeInstance> sortedShapeInstances = null;
+
+    public static volatile boolean updateSortedShapeInstances = false;
+    private static final List<RenderedShapeInstance> pendingCloseOnRenderThread = new ArrayList<>();
+    private static final EnumMap<DebugShape.RenderMethod, List<RenderedShapeInstance>> sortedShapeInstancesByRenderMethod = new EnumMap<>(DebugShape.RenderMethod.class);
     private static Vec3 lastSortedPosition = Vec3.ZERO;
-    private static boolean allHidden = false;
 
     public static void add(Optional<ResourceLocation> resourceLocationOptional, DebugShape debugShape, int flags, int lifetime) {
-        RenderedShapeInstance renderedShapeInstance = new RenderedShapeInstance(resourceLocationOptional.orElse(null), debugShape, flags, lifetime);
+        lock.lock();
+        try {
+            RenderedShapeInstance renderedShapeInstance = new RenderedShapeInstance(resourceLocationOptional.orElse(null), debugShape, flags, lifetime);
 
-        if (resourceLocationOptional.isPresent()) {
-            ResourceLocation resourceLocation = resourceLocationOptional.get();
+            if (resourceLocationOptional.isPresent()) {
+                ResourceLocation resourceLocation = resourceLocationOptional.get();
 
-            availableNamespaces.add(resourceLocation.getNamespace());
+                availableNamespaces.add(resourceLocation.getNamespace());
 
-            RenderedShapeInstance old = shapeInstancesByResourceLocation.get(resourceLocation);
-            if (old != null) {
-                old.close();
+                RenderedShapeInstance old = shapeInstancesByResourceLocation.get(resourceLocation);
+                if (old != null) {
+                    shapeInstances.remove(old);
+                    old.close();
+                }
+
+                shapeInstancesByResourceLocation.put(resourceLocation, renderedShapeInstance);
             }
-
-            shapeInstancesByResourceLocation.put(resourceLocation, renderedShapeInstance);
+            shapeInstances.add(renderedShapeInstance);
+            updateSortedShapeInstances = true;
+        } finally {
+            lock.unlock();
         }
-        shapeInstances.add(renderedShapeInstance);
-        sortedShapeInstances = null;
     }
 
     public static void remove(ResourceLocation resourceLocation) {
-        RenderedShapeInstance instance = shapeInstancesByResourceLocation.remove(resourceLocation);
-        if (instance != null) {
-            shapeInstances.remove(instance);
-            sortedShapeInstances = null;
-            instance.close();
+        lock.lock();
+        try {
+            RenderedShapeInstance instance = shapeInstancesByResourceLocation.remove(resourceLocation);
+            if (instance != null) {
+                shapeInstances.remove(instance);
+                updateSortedShapeInstances = true;
+                instance.close();
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
     public static void clear() {
-        shapeInstances.forEach(RenderedShapeInstance::close);
-        shapeInstances.clear();
-        sortedShapeInstances = null;
-        shapeInstancesByResourceLocation.clear();
-        availableNamespaces.clear();
+        lock.lock();
+        try {
+            if (RenderSystem.isOnRenderThread()) {
+                shapeInstances.forEach(RenderedShapeInstance::close);
+            } else {
+                pendingCloseOnRenderThread.addAll(shapeInstances);
+            }
+            shapeInstances.clear();
+            updateSortedShapeInstances = true;
+            shapeInstancesByResourceLocation.clear();
+            availableNamespaces.clear();
+        } finally {
+            lock.unlock();
+        }
+
     }
 
     public static boolean isAllHidden() {
@@ -129,100 +163,205 @@ public class DebugRenderManager {
     }
 
     public static void clearNamespace(String namespace) {
-        shapeInstancesByResourceLocation.entrySet().removeIf(entry -> {
-            if (entry.getKey().getNamespace().equals(namespace)) {
-                RenderedShapeInstance instance = entry.getValue();
-                shapeInstances.remove(instance);
-                sortedShapeInstances = null;
-                entry.getValue().close();
-                return true;
-            } else {
-                return false;
-            }
-        });
-        availableNamespaces.remove(namespace);
+        lock.lock();
+        try {
+            boolean isOnRenderThread = RenderSystem.isOnRenderThread();
+            shapeInstancesByResourceLocation.entrySet().removeIf(entry -> {
+                if (entry.getKey().getNamespace().equals(namespace)) {
+                    RenderedShapeInstance instance = entry.getValue();
+                    shapeInstances.remove(instance);
+                    updateSortedShapeInstances = true;
+                    if (isOnRenderThread) {
+                        instance.close();
+                    } else {
+                        pendingCloseOnRenderThread.add(instance);
+                    }
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+            availableNamespaces.remove(namespace);
+        } finally {
+            lock.unlock();
+        }
     }
 
     public static boolean hasShapesToRender() {
         return !shapeInstances.isEmpty() && !allHidden;
     }
 
-    public static void render(PoseStack poseStack, Camera camera) {
-        if (sortedShapeInstances == null) {
-            lastSortedPosition = camera.getPosition();
-            sortedShapeInstances = new ArrayList<>(shapeInstances);
-            sortedShapeInstances.sort(Comparator.comparingDouble(instance -> -lastSortedPosition.distanceToSqr(instance.center)));
-        } else if (camera.getPosition().distanceToSqr(lastSortedPosition) > 0.25*0.25) {
-            lastSortedPosition = camera.getPosition();
-            sortedShapeInstances.sort(Comparator.comparingDouble(instance -> -lastSortedPosition.distanceToSqr(instance.center)));
+    public static void renderF3Text(List<String> list, boolean left) {
+        if (!RenderSystem.isOnRenderThread()) {
+            return;
         }
 
-        FogParameters oldFog = RenderSystem.getShaderFog();
-        RenderSystem.setShaderFog(FogParameters.NO_FOG);
+        if (!pendingCloseOnRenderThread.isEmpty()) {
+            pendingCloseOnRenderThread.forEach(RenderedShapeInstance::close);
+            pendingCloseOnRenderThread.clear();
+        }
 
-        float[] modelViewMat = poseStack.last().pose().get(new float[16]);
+        updateRenderLists(null);
 
-        LinkedHashMap<RenderType, List<RenderPass.Draw>> drawsForRenderType = new LinkedHashMap<>();
-
-        MultiBufferSource.BufferSource multiBufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
-        for (RenderedShapeInstance instance : sortedShapeInstances) {
-            if (instance.resourceLocation != null && hiddenNamespaces.contains(instance.resourceLocation.getNamespace())) {
-                continue;
+        List<RenderedShapeInstance> f3Text = sortedShapeInstancesByRenderMethod.get(left ? DebugShape.RenderMethod.F3_TEXT_LEFT : DebugShape.RenderMethod.F3_TEXT_RIGHT);
+        if (f3Text != null && !f3Text.isEmpty()) {
+            list.add("");
+            for (RenderedShapeInstance instance : f3Text) {
+                instance.renderF3Text(list);
             }
+        }
+    }
 
-            instance.render(poseStack, multiBufferSource, camera, modelViewMat, (draw, renderType) -> {
-                drawsForRenderType.computeIfAbsent(renderType, k -> new ArrayList<>()).add(draw);
-            });
+    public static void renderGui(GuiGraphics guiGraphics) {
+        RenderSystem.assertOnRenderThread();
+
+        if (!pendingCloseOnRenderThread.isEmpty()) {
+            pendingCloseOnRenderThread.forEach(RenderedShapeInstance::close);
+            pendingCloseOnRenderThread.clear();
         }
 
-        for (Map.Entry<RenderType, List<RenderPass.Draw>> entry : drawsForRenderType.entrySet()) {
-            RenderType renderType = entry.getKey();
-            List<RenderPass.Draw> draws = entry.getValue();
+        // Disable rendering gui elements while the debug screen is active
+        if (Minecraft.getInstance().getDebugOverlay().showDebugScreen()) {
+            return;
+        }
 
-            int maxIndex = 0;
-            for (RenderPass.Draw draw : draws) {
-                if (draw.indexBuffer() == null) {
-                    maxIndex = Math.max(maxIndex, draw.indexCount());
+        updateRenderLists(null);
+
+        List<RenderedShapeInstance> guiImmediate = sortedShapeInstancesByRenderMethod.get(DebugShape.RenderMethod.GUI_IMMEDIATE);
+        if (guiImmediate != null && !guiImmediate.isEmpty()) {
+            GuiRenderContext context = new GuiRenderContext();
+
+            for (RenderedShapeInstance instance : guiImmediate) {
+                instance.renderGuiImmediate(guiGraphics, context);
+            }
+        }
+    }
+
+    public static void renderWorld(PoseStack poseStack, Camera camera) {
+        RenderSystem.assertOnRenderThread();
+
+        if (!pendingCloseOnRenderThread.isEmpty()) {
+            pendingCloseOnRenderThread.forEach(RenderedShapeInstance::close);
+            pendingCloseOnRenderThread.clear();
+        }
+
+        updateRenderLists(camera);
+
+        List<RenderedShapeInstance> worldImmediate = sortedShapeInstancesByRenderMethod.get(DebugShape.RenderMethod.WORLD_IMMEDIATE);
+        if (worldImmediate != null && !worldImmediate.isEmpty()) {
+            MultiBufferSource.BufferSource multiBufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+
+            for (RenderedShapeInstance instance : worldImmediate) {
+                instance.renderWorldImmediate(poseStack, multiBufferSource, camera);
+            }
+        }
+
+        List<RenderedShapeInstance> worldCached = sortedShapeInstancesByRenderMethod.get(DebugShape.RenderMethod.WORLD_CACHED);
+        if (worldCached != null && !worldCached.isEmpty()) {
+            FogParameters oldFog = RenderSystem.getShaderFog();
+            RenderSystem.setShaderFog(FogParameters.NO_FOG);
+
+            float[] modelViewMat = poseStack.last().pose().get(new float[16]);
+
+            LinkedHashMap<RenderType, List<RenderPass.Draw>> drawsForRenderType = new LinkedHashMap<>();
+
+            for (RenderedShapeInstance instance : worldCached) {
+                if (instance.resourceLocation != null && hiddenNamespaces.contains(instance.resourceLocation.getNamespace())) {
+                    continue;
                 }
+
+                instance.renderWorldCached(camera, modelViewMat, (draw, renderType) -> {
+                    drawsForRenderType.computeIfAbsent(renderType, k -> new ArrayList<>()).add(draw);
+                });
             }
 
-            RenderPipeline renderPipeline = renderType.getRenderPipeline();
-            RenderTarget renderTarget = Minecraft.getInstance().getMainRenderTarget();
-            GpuTexture colour = renderTarget.getColorTexture();
-            GpuTexture depth = renderTarget.getDepthTexture();
+            for (Map.Entry<RenderType, List<RenderPass.Draw>> entry : drawsForRenderType.entrySet()) {
+                RenderType renderType = entry.getKey();
+                List<RenderPass.Draw> draws = entry.getValue();
 
-            RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(renderType.mode());
-            GpuBuffer sharedIndexBuffer = maxIndex == 0 ? null : sequentialBuffer.getBuffer(maxIndex);
-            VertexFormat.IndexType sharedIndexType = maxIndex == 0 ? null : sequentialBuffer.type();
+                int maxIndex = 0;
+                for (RenderPass.Draw draw : draws) {
+                    if (draw.indexBuffer() == null) {
+                        maxIndex = Math.max(maxIndex, draw.indexCount());
+                    }
+                }
 
-            renderType.setupRenderState();
+                RenderPipeline renderPipeline = renderType.getRenderPipeline();
+                RenderTarget renderTarget = Minecraft.getInstance().getMainRenderTarget();
+                GpuTexture colour = renderTarget.getColorTexture();
+                GpuTexture depth = renderTarget.getDepthTexture();
 
-            try (RenderPass renderPass = RenderSystem.getDevice()
-                                                     .createCommandEncoder()
-                                                     .createRenderPass(colour, OptionalInt.empty(), depth, OptionalDouble.empty())) {
-                renderPass.setPipeline(renderPipeline);
-                renderPass.drawMultipleIndexed(draws, sharedIndexBuffer, sharedIndexType);
+                RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(renderType.mode());
+                GpuBuffer sharedIndexBuffer = maxIndex == 0 ? null : sequentialBuffer.getBuffer(maxIndex);
+                VertexFormat.IndexType sharedIndexType = maxIndex == 0 ? null : sequentialBuffer.type();
+
+                renderType.setupRenderState();
+
+                try (RenderPass renderPass = RenderSystem.getDevice()
+                                                         .createCommandEncoder()
+                                                         .createRenderPass(colour, OptionalInt.empty(), depth, OptionalDouble.empty())) {
+                    renderPass.setPipeline(renderPipeline);
+                    renderPass.drawMultipleIndexed(draws, sharedIndexBuffer, sharedIndexType);
+                }
+
+                renderType.clearRenderState();
             }
 
-            renderType.clearRenderState();
+            RenderSystem.setShaderFog(oldFog);
         }
+    }
 
-        RenderSystem.setShaderFog(oldFog);
+    private static void updateRenderLists(@Nullable Camera camera) {
+        boolean resortDueToMovement = camera != null && camera.getPosition().distanceToSqr(lastSortedPosition) > 0.25*0.25;
+        boolean updateDueToAddOrRemove = updateSortedShapeInstances;
+        updateSortedShapeInstances = false;
+
+        if (updateDueToAddOrRemove || resortDueToMovement) {
+            lock.lock();
+            try {
+                if (updateDueToAddOrRemove) {
+                    sortedShapeInstancesByRenderMethod.clear();
+                    for (RenderedShapeInstance instance : shapeInstances) {
+                        sortedShapeInstancesByRenderMethod.computeIfAbsent(instance.renderMethod, k -> new ArrayList<>()).add(instance);
+                    }
+                }
+                if (camera != null) {
+                    lastSortedPosition = camera.getPosition();
+                }
+                Comparator<RenderedShapeInstance> comparator = Comparator.<RenderedShapeInstance>comparingDouble(instance -> -lastSortedPosition.distanceToSqr(instance.center))
+                    .thenComparing(instance -> Objects.toString(instance.resourceLocation));
+                for (List<RenderedShapeInstance> list : sortedShapeInstancesByRenderMethod.values()) {
+                    list.sort(comparator);
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 
     public static void tick() {
-        shapeInstances.removeIf(instance -> {
-            if (instance.lifetime > 0) {
-                instance.lifetime -= 1;
-                if (instance.lifetime == 0) {
-                    shapeInstancesByResourceLocation.values().remove(instance);
-                    sortedShapeInstances = null;
-                    instance.close();
-                    return true;
-                }
+        lock.lock();
+        try {
+            if (RenderSystem.isOnRenderThread() && !pendingCloseOnRenderThread.isEmpty()) {
+                pendingCloseOnRenderThread.forEach(RenderedShapeInstance::close);
+                pendingCloseOnRenderThread.clear();
             }
-            return false;
-        });
+
+            shapeInstances.removeIf(instance -> {
+                if (instance.lifetime > 0) {
+                    instance.lifetime -= 1;
+                    if (instance.lifetime == 0) {
+                        shapeInstancesByResourceLocation.values().remove(instance);
+                        updateSortedShapeInstances = true;
+                        instance.close();
+                        return true;
+                    }
+                }
+                return false;
+            });
+        } finally {
+            lock.unlock();
+        }
     }
 
 

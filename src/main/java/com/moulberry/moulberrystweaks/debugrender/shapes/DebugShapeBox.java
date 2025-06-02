@@ -41,11 +41,11 @@ public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionf rotation, int fa
 
     @Override
     public RenderMethod renderMethod() {
-        return RenderMethod.CACHED;
+        return RenderMethod.WORLD_CACHED;
     }
 
     @Override
-    public void render(Consumer<RenderJob> render, int flags) {
+    public void renderWorldCached(Consumer<RenderJob> render, int flags) {
         boolean showThroughWalls = (flags & FLAG_SHOW_THROUGH_WALLS) != 0;
         boolean wireframe = (flags & FLAG_WIREFRAME) != 0;
 

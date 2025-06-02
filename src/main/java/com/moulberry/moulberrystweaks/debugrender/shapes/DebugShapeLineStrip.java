@@ -34,11 +34,11 @@ public record DebugShapeLineStrip(List<Vec3> points, int argb, float lineThickne
 
     @Override
     public RenderMethod renderMethod() {
-        return RenderMethod.CACHED;
+        return RenderMethod.WORLD_CACHED;
     }
 
     @Override
-    public void render(Consumer<RenderJob> render, int flags) {
+    public void renderWorldCached(Consumer<RenderJob> render, int flags) {
         if (this.points.size() < 2) {
             return;
         }

@@ -6,14 +6,9 @@ import com.google.gson.JsonArray;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.serialization.JsonOps;
 import com.moulberry.moulberrystweaks.config.MoulberrysTweaksConfig;
 import com.moulberry.moulberrystweaks.debugrender.DebugRenderManager;
-import com.moulberry.moulberrystweaks.debugrender.shapes.DebugShapeEllipsoid;
 import com.moulberry.moulberrystweaks.packet.DebugMovementDataPacket;
 import com.moulberry.moulberrystweaks.packet.DebugRenderAddPacket;
 import com.moulberry.moulberrystweaks.packet.DebugRenderClearNamespacePacket;
@@ -31,9 +26,9 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
@@ -42,17 +37,13 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.font.FontManager;
 import net.minecraft.client.gui.font.FontSet;
 import net.minecraft.client.gui.screens.LoadingOverlay;
-import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,9 +54,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 public class MoulberrysTweaks implements ModInitializer {
 	public static final String MOD_ID = "moulberrystweaks";
@@ -312,6 +301,10 @@ public class MoulberrysTweaks implements ModInitializer {
             ActiveWidgets.activeWidgets.removeIf(widget -> !widget.isOpen());
             DebugRenderManager.tick();
         });
+
+        HudLayerRegistrationCallback.EVENT.register(layeredDrawer -> layeredDrawer.attachLayerAfter(IdentifiedLayer.DEBUG, ResourceLocation.fromNamespaceAndPath("moulberrystweaks", "after_debug"), (guiGraphics, tickCounter) -> {
+            DebugRenderManager.renderGui(guiGraphics);
+        }));
 	}
 
     private static int writeFontWidths(CommandContext<FabricClientCommandSource> cmd) {

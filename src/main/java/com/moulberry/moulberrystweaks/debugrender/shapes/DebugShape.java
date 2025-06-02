@@ -2,7 +2,9 @@ package com.moulberry.moulberrystweaks.debugrender.shapes;
 
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.moulberry.moulberrystweaks.debugrender.GuiRenderContext;
 import net.minecraft.client.Camera;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -10,9 +12,10 @@ import net.minecraft.network.SkipPacketDecoderException;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.List;
 import java.util.function.Consumer;
 
-public sealed interface DebugShape permits DebugShapeBox, DebugShapeEllipsoid, DebugShapeLineStrip, DebugShapeQuad, DebugShapeText {
+public sealed interface DebugShape permits DebugShapeBox, DebugShapeEllipsoid, DebugShapeLineStrip, DebugShapeQuad, DebugShapeText, DebugShapeGuiText {
 
     int FLAG_SHOW_THROUGH_WALLS = 1;
     int FLAG_FULL_OPACITY_BEHIND_WALLS = 2;
@@ -24,16 +27,21 @@ public sealed interface DebugShape permits DebugShapeBox, DebugShapeEllipsoid, D
     float[] QUARTER_OPACITY = new float[]{1f, 1f, 1f, 0.25f};
 
     enum RenderMethod {
-        IMMEDIATE,
-        CACHED
+        F3_TEXT_LEFT,
+        F3_TEXT_RIGHT,
+        GUI_IMMEDIATE,
+        WORLD_IMMEDIATE,
+        WORLD_CACHED
     }
 
     record RenderJob(MeshData meshData, RenderType renderType, float[] colour) {
     }
 
     RenderMethod renderMethod();
-    default void renderImmediate(PoseStack poseStack, MultiBufferSource.BufferSource multiBufferSource, Camera camera, int flags) {}
-    default void render(Consumer<RenderJob> render, int flags) {}
+    default void renderF3Text(List<String> list, int flags) {}
+    default void renderGuiImmediate(GuiGraphics guiGraphics, GuiRenderContext context, int flags) {}
+    default void renderWorldImmediate(PoseStack poseStack, MultiBufferSource.BufferSource multiBufferSource, Camera camera, int flags) {}
+    default void renderWorldCached(Consumer<RenderJob> render, int flags) {}
     Vec3 center();
 
     StreamCodec<RegistryFriendlyByteBuf, DebugShape> STREAM_CODEC = new StreamCodec<>() {
@@ -46,6 +54,7 @@ public sealed interface DebugShape permits DebugShapeBox, DebugShapeEllipsoid, D
                 case "line_strip" -> DebugShapeLineStrip.STREAM_CODEC.decode(friendlyByteBuf);
                 case "quad" -> DebugShapeQuad.STREAM_CODEC.decode(friendlyByteBuf);
                 case "text" -> DebugShapeText.STREAM_CODEC.decode(friendlyByteBuf);
+                case "gui_text" -> DebugShapeGuiText.STREAM_CODEC.decode(friendlyByteBuf);
                 default -> throw new SkipPacketDecoderException("Unknown debug shape: " + shape);
             };
         }
@@ -72,6 +81,10 @@ public sealed interface DebugShape permits DebugShapeBox, DebugShapeEllipsoid, D
                 case DebugShapeText text -> {
                     friendlyByteBuf.writeUtf("text");
                     DebugShapeText.STREAM_CODEC.encode(friendlyByteBuf, text);
+                }
+                case DebugShapeGuiText guiText -> {
+                    friendlyByteBuf.writeUtf("gui_text");
+                    DebugShapeGuiText.STREAM_CODEC.encode(friendlyByteBuf, guiText);
                 }
             }
         }
