@@ -9,6 +9,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.serialization.JsonOps;
 import com.moulberry.moulberrystweaks.config.MoulberrysTweaksConfig;
 import com.moulberry.moulberrystweaks.debugrender.DebugRenderManager;
+import com.moulberry.moulberrystweaks.packet.AutoVanishPlayersSetPacket;
 import com.moulberry.moulberrystweaks.packet.DebugMovementDataPacket;
 import com.moulberry.moulberrystweaks.packet.DebugRenderAddPacket;
 import com.moulberry.moulberrystweaks.packet.DebugRenderClearNamespacePacket;
@@ -60,7 +61,6 @@ public class MoulberrysTweaks implements ModInitializer {
 	public static final String MOD_ID = "moulberrystweaks";
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    public static boolean isAutoVanishPlayersEnabled = false;
     public static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     public static KeyMapping viewComponentsKeyBind = null;
@@ -112,10 +112,12 @@ public class MoulberrysTweaks implements ModInitializer {
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             DebugRenderManager.clear();
+            AutoVanishPlayers.setServerState(ServerState.CLIENT_OR_DEFAULT);
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             DebugRenderManager.clear();
+            AutoVanishPlayers.setServerState(ServerState.CLIENT_OR_DEFAULT);
         });
 
         ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((handler, client) -> {
@@ -132,18 +134,31 @@ public class MoulberrysTweaks implements ModInitializer {
 
             command = ClientCommandManager.literal("autovanishplayers");
             command.then(ClientCommandManager.literal("on").executes(cmd -> {
-                isAutoVanishPlayersEnabled = true;
-                cmd.getSource().sendFeedback(Component.literal("AutoVanishPlayers is now ON"));
+                AutoVanishPlayers.setClientState(true);
+                switch (AutoVanishPlayers.serverState()) {
+                    case CLIENT_OR_DEFAULT, ON, OFF -> cmd.getSource().sendFeedback(Component.literal("AutoVanishPlayers is now ON").withStyle(ChatFormatting.YELLOW));
+                    case FORCE_ON -> cmd.getSource().sendFeedback(Component.literal("AutoVanishPlayers was already forced ON by server").withStyle(ChatFormatting.YELLOW));
+                    case FORCE_OFF -> cmd.getSource().sendFeedback(Component.literal("Can't enable, AutoVanishPlayers is forced OFF by server").withStyle(ChatFormatting.RED));
+                }
                 return 0;
             }));
             command.then(ClientCommandManager.literal("off").executes(cmd -> {
-                isAutoVanishPlayersEnabled = false;
-                cmd.getSource().sendFeedback(Component.literal("AutoVanishPlayers is now OFF"));
+                AutoVanishPlayers.setClientState(false);
+                switch (AutoVanishPlayers.serverState()) {
+                    case CLIENT_OR_DEFAULT, ON, OFF -> cmd.getSource().sendFeedback(Component.literal("AutoVanishPlayers is now OFF").withStyle(ChatFormatting.YELLOW));
+                    case FORCE_ON -> cmd.getSource().sendFeedback(Component.literal("Can't disable, AutoVanishPlayers is forced ON by server").withStyle(ChatFormatting.YELLOW));
+                    case FORCE_OFF -> cmd.getSource().sendFeedback(Component.literal("AutoVanishPlayers was already forced OFF by server").withStyle(ChatFormatting.RED));
+                }
                 return 0;
             }));
             command.executes(cmd -> {
-                String onOff = isAutoVanishPlayersEnabled ? "ON" : "OFF";
-                cmd.getSource().sendFeedback(Component.literal("AutoVanishPlayers is " + onOff));
+                String text = AutoVanishPlayers.isEnabled ? "AutoVanishPlayers is ON" : "AutoVanishPlayers is OFF";
+                switch (AutoVanishPlayers.serverState()) {
+                    case FORCE_ON, FORCE_OFF -> text += " (forced by server)";
+                    case ON, OFF -> text += " (set by server)";
+                    case CLIENT_OR_DEFAULT -> {}
+                }
+                cmd.getSource().sendFeedback(Component.literal(text).withStyle(ChatFormatting.YELLOW));
                 return 0;
             });
             dispatcher.register(command);
@@ -288,11 +303,13 @@ public class MoulberrysTweaks implements ModInitializer {
         PayloadTypeRegistry.playS2C().register(DebugRenderRemovePacket.TYPE, DebugRenderRemovePacket.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(DebugRenderClearPacket.TYPE, DebugRenderClearPacket.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(DebugRenderClearNamespacePacket.TYPE, DebugRenderClearNamespacePacket.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(AutoVanishPlayersSetPacket.TYPE, AutoVanishPlayersSetPacket.STREAM_CODEC);
 
         ClientPlayNetworking.registerGlobalReceiver(DebugRenderAddPacket.TYPE, DebugRenderAddPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(DebugRenderRemovePacket.TYPE, DebugRenderRemovePacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(DebugRenderClearPacket.TYPE, DebugRenderClearPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(DebugRenderClearNamespacePacket.TYPE, DebugRenderClearNamespacePacket::handle);
+        ClientPlayNetworking.registerGlobalReceiver(AutoVanishPlayersSetPacket.TYPE, AutoVanishPlayersSetPacket::handle);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!(Minecraft.getInstance().getOverlay() instanceof LoadingOverlay)) {
