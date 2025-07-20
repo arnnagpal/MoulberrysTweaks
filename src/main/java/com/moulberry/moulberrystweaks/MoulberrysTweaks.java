@@ -131,7 +131,9 @@ public class MoulberrysTweaks implements ModInitializer {
             supportsDebugMovementDataPacket = false;
         });
 
-        Minecraft.getInstance().schedule(() -> Lattice.performTest(configElements));
+        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            Minecraft.getInstance().schedule(() -> Lattice.performTest(configElements));
+        }
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             var command = ClientCommandManager.literal("moulberrystweaks")

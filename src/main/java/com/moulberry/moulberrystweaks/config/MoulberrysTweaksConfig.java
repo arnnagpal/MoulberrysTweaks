@@ -3,7 +3,6 @@ package com.moulberry.moulberrystweaks.config;
 import com.moulberry.lattice.LatticeDynamicFrequency;
 import com.moulberry.lattice.annotation.LatticeCategory;
 import com.moulberry.lattice.annotation.LatticeOption;
-import com.moulberry.lattice.annotation.constraint.LatticeDisableIf;
 import com.moulberry.lattice.annotation.constraint.LatticeHideIf;
 import com.moulberry.lattice.annotation.widget.LatticeWidgetButton;
 import com.moulberry.lattice.annotation.widget.LatticeWidgetKeybind;
