@@ -3,12 +3,12 @@
 	"id": "moulberrystweaks",
 	"version": "${version}",
 	"name": "Moulberry's Tweaks",
-	"description": "Tweaks made by Moulberry. Some might be useful, others might not",
+	"description": "A collection of client-side tweaks, primarily useful for developers and creators",
 	"authors": [
 		"Moulberry"
 	],
 	"contact": {
-		"sources": "https://github.com/Moulberry/AutoVanishPlayers"
+		"sources": "https://github.com/Moulberry/MoulberrysTweaks"
 	},
 	"license": "MIT",
 	"icon": "assets/moulberrystweaks/icon.png",
