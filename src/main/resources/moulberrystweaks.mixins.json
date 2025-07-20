@@ -7,6 +7,7 @@
   },
   "client": [
     "MixinLoadingOverlay",
+    "MixinTransferableSelectionListPackEntry",
     "attackindicator.MixinGui",
     "attackindicator.MixinLocalPlayer",
     "attackindicator.MixinPlayer",
@@ -23,7 +24,8 @@
     "debugshape.MixinLevelRenderer",
     "inventorywidgets.MixinAbstractContainerScreen",
     "inventorywidgets.MixinConnection",
-    "packetexceptionlogging.MixinConnection"
+    "packetexceptionlogging.MixinConnection",
+    "preventserverclosingpausescreen.MixinClientPacketHandler"
   ],
   "mixins": [
     "ignorenarratorerror.MixinNarrator"

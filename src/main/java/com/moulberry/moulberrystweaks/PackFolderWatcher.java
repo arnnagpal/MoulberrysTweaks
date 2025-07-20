@@ -1,6 +1,8 @@
 package com.moulberry.moulberrystweaks;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.packs.PackSelectionScreen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,7 +63,7 @@ public class PackFolderWatcher {
     }
 
     public static void tick() {
-        if (!MoulberrysTweaks.config.automaticPackReload) {
+        if (!MoulberrysTweaks.config.resourcePack.automaticPackReload) {
             if (watcher != null) {
                 try {
                     watcher.close();
@@ -98,6 +100,12 @@ public class PackFolderWatcher {
         }
 
         if (changeOccurred) {
+            Screen currentScreen = Minecraft.getInstance().screen;
+            if (currentScreen instanceof PackSelectionScreen) {
+                // Pack will be reloaded when we exit the screen anyways, so
+                // reloading it ourselves is unnecessary
+                return;
+            }
             Minecraft.getInstance().reloadResourcePacks();
         }
     }

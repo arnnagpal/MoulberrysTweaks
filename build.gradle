@@ -52,6 +52,12 @@ dependencies {
     }
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
+    include(modImplementation("com.moulberry:lattice:1.2.4")) {
+        attributes {
+            attribute(Attribute.of("earth.terrarium.cloche.modLoader", String), "fabric")
+        }
+    }
+
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.1.2")
 
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"

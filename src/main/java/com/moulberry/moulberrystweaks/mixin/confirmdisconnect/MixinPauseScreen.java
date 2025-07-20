@@ -29,7 +29,7 @@ public class MixinPauseScreen extends Screen {
 
     @Inject(method = "onDisconnect", at = @At("HEAD"), cancellable = true)
     public void onDisconnect(CallbackInfo ci) {
-        if (MoulberrysTweaks.config.confirmDisconnect && this.disconnectButton != null && !this.confirmingDisconnect && !this.minecraft.isLocalServer()) {
+        if (MoulberrysTweaks.config.gameplay.confirmDisconnect && this.disconnectButton != null && !this.confirmingDisconnect && !this.minecraft.isLocalServer()) {
             this.disconnectButton.active = true;
             this.disconnectButton.setMessage(Component.translatable("moulberrystweaks.confirm_disconnect"));
             this.confirmingDisconnect = true;

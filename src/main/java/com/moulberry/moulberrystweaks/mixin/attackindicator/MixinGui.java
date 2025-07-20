@@ -14,7 +14,7 @@ public class MixinGui {
 
     @WrapOperation(method = "renderCrosshair", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;getAttackStrengthScale(F)F"))
     public float renderCrosshair_getAttackStrengthScale(LocalPlayer instance, float partialTick, Operation<Float> original) {
-        if (instance instanceof LocalPlayerExt localPlayerExt && MoulberrysTweaks.config.correctAttackIndicator) {
+        if (instance instanceof LocalPlayerExt localPlayerExt && MoulberrysTweaks.config.gameplay.correctAttackIndicator) {
             return localPlayerExt.mt$getVisualAttackStrengthScale(partialTick);
         } else {
             return original.call(instance, partialTick);

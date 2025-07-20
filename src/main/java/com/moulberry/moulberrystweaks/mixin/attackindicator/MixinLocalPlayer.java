@@ -2,6 +2,7 @@ package com.moulberry.moulberrystweaks.mixin.attackindicator;
 
 import com.mojang.authlib.GameProfile;
 import com.moulberry.moulberrystweaks.DebugMovementData;
+import com.moulberry.moulberrystweaks.MoulberrysTweaks;
 import com.moulberry.moulberrystweaks.ext.LocalPlayerExt;
 import com.moulberry.moulberrystweaks.packet.DebugMovementDataPacket;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -71,7 +72,7 @@ public abstract class MixinLocalPlayer extends Player implements LocalPlayerExt 
 
     @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;sendPosition()V"))
     public void beforeSendPosition(CallbackInfo ci) {
-        if (this.connection.serverBrand().equalsIgnoreCase("graphite")) {
+        if (MoulberrysTweaks.supportsDebugMovementDataPacket && MoulberrysTweaks.config.debugging.debugMovement) {
             ClientPlayNetworking.send(new DebugMovementDataPacket(this.debugMovementData));
         }
     }

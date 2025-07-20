@@ -25,7 +25,7 @@ public class MixinConnection {
 
     @Inject(method = "exceptionCaught", at = @At("HEAD"))
     public void exceptionCaught(ChannelHandlerContext channelHandlerContext, Throwable throwable, CallbackInfo ci) {
-        if (this.receiving == PacketFlow.CLIENTBOUND && MoulberrysTweaks.config.logPacketExceptions) {
+        if (this.receiving == PacketFlow.CLIENTBOUND && MoulberrysTweaks.config.debugging.logPacketExceptions) {
             throwable = ignoreOrUnwrapException(throwable);
             if (throwable == null) {
                 return;

@@ -1,129 +1,177 @@
 package com.moulberry.moulberrystweaks.config;
 
+import com.moulberry.lattice.LatticeDynamicFrequency;
+import com.moulberry.lattice.annotation.LatticeCategory;
+import com.moulberry.lattice.annotation.LatticeOption;
+import com.moulberry.lattice.annotation.constraint.LatticeDisableIf;
+import com.moulberry.lattice.annotation.constraint.LatticeHideIf;
+import com.moulberry.lattice.annotation.widget.LatticeWidgetButton;
+import com.moulberry.lattice.annotation.widget.LatticeWidgetKeybind;
+import com.moulberry.lattice.annotation.widget.LatticeWidgetMessage;
 import com.moulberry.moulberrystweaks.MoulberrysTweaks;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.OptionInstance;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MoulberrysTweaksConfig {
 
-    @OptionCaption("moulberrystweaks.option.fast_loading_overlay")
-    @OptionDescription("moulberrystweaks.option.fast_loading_overlay.description")
-    public boolean fastLoadingOverlay = true;
+    @LatticeCategory(name = "moulberrystweaks.config.gameplay")
+    public Gameplay gameplay = new Gameplay();
 
-    @OptionCaption("moulberrystweaks.option.transparent_loading_overlay")
-    @OptionDescription("moulberrystweaks.option.transparent_loading_overlay.description")
-    public boolean transparentLoadingOverlay = false;
+    public static class Gameplay {
+        @LatticeOption(title = "moulberrystweaks.config.gameplay.confirm_disconnect", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean confirmDisconnect = false;
 
-    @OptionCaption("moulberrystweaks.option.automatic_pack_reload")
-    @OptionDescription("moulberrystweaks.option.automatic_pack_reload.description")
-    public boolean automaticPackReload = true;
+        @LatticeOption(title = "moulberrystweaks.config.gameplay.correct_attack_indicator", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean correctAttackIndicator = false;
 
-    @OptionCaption("moulberrystweaks.option.correct_attack_indicator")
-    @OptionDescription("moulberrystweaks.option.correct_attack_indicator.description")
-    public boolean correctAttackIndicator = true;
+        @LatticeOption(title = "moulberrystweaks.config.gameplay.prevent_server_closing_pause_screen", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean preventServerClosingPauseScreen = false;
+    }
 
-    @OptionCaption("moulberrystweaks.option.log_packet_exceptions")
-    @OptionDescription("moulberrystweaks.option.log_packet_exceptions.description")
-    public boolean logPacketExceptions = true;
+    @LatticeCategory(name = "moulberrystweaks.config.loading_overlay")
+    public LoadingOverlay loadingOverlay = new LoadingOverlay();
 
-    @OptionCaption("moulberrystweaks.option.ignore_narrator_error")
-    @OptionDescription("moulberrystweaks.option.ignore_narrator_error.description")
-    public boolean ignoreNarratorError = false;
+    public static class LoadingOverlay {
+        @LatticeOption(title = "moulberrystweaks.config.loading_overlay.fast", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean fast = false;
 
-    @OptionCaption("moulberrystweaks.option.enable_component_widget")
-    @OptionDescription("moulberrystweaks.option.enable_component_widget.description")
-    public boolean enableComponentWidget = true;
+        @LatticeOption(title = "moulberrystweaks.config.loading_overlay.transparent", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean transparent = false;
+    }
 
-    @OptionCaption("moulberrystweaks.option.enable_packet_debug_widget")
-    @OptionDescription("moulberrystweaks.option.enable_packet_debug_widget.description")
-    public boolean enablePacketDebugWidget = false;
+    @LatticeCategory(name = "moulberrystweaks.config.resource_pack")
+    public ResourcePack resourcePack = new ResourcePack();
 
-    @OptionCaption("moulberrystweaks.option.confirm_disconnect")
-    @OptionDescription("moulberrystweaks.option.confirm_disconnect.description")
-    public boolean confirmDisconnect = false;
+    public static class ResourcePack {
+        @LatticeOption(title = "moulberrystweaks.config.resource_pack.automatic_pack_reload", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean automaticPackReload = false;
 
-    @SuppressWarnings("unchecked")
-    public OptionInstance<?>[] createOptionInstances() {
-        List<OptionInstance<?>> options = new ArrayList<>();
+        @LatticeOption(title = "moulberrystweaks.config.resource_pack.disable_warnings", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean disableWarnings = false;
+    }
 
-        for (Field field : MoulberrysTweaksConfig.class.getDeclaredFields()) {
-            try {
-                // Ignore static & transient fields
-                if ((field.getModifiers() & Modifier.STATIC) != 0 || (field.getModifiers() & Modifier.TRANSIENT) != 0) {
-                    continue;
-                }
+    @LatticeCategory(name = "moulberrystweaks.config.debugging")
+    public Debugging debugging = new Debugging();
 
-                OptionCaption caption = field.getDeclaredAnnotation(OptionCaption.class);
-                if (caption == null) {
-                    continue;
-                }
+    public static class Debugging {
+        @LatticeOption(title = "moulberrystweaks.config.debugging.log_packet_exceptions", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean logPacketExceptions = true;
 
-                OptionInstance.TooltipSupplier tooltipSupplier = OptionInstance.noTooltip();
-                OptionDescription description = field.getDeclaredAnnotation(OptionDescription.class);
-                if (description != null) {
-                    MutableComponent root = Component.empty();
-                    root.append(Component.translatable(caption.value()).withStyle(ChatFormatting.YELLOW));
-                    root.append(Component.literal("\n"));
-                    root.append(Component.translatable(description.value()));
+        @LatticeOption(title = "moulberrystweaks.config.debugging.ignore_narrator_error", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean ignoreNarratorError = true;
 
-                    tooltipSupplier = OptionInstance.cachedConstantTooltip(root);
-                }
+        @LatticeCategory(name = "moulberrystweaks.config.debugging.inventory")
+        public Inventory inventory = new Inventory();
 
-                if (field.getType() == boolean.class) {
-                    options.add(OptionInstance.createBoolean(caption.value(), tooltipSupplier, field.getBoolean(this), value -> {
-                        try {
-                            field.set(this, value);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }));
-                }
-            } catch (Exception e) {
-                MoulberrysTweaks.LOGGER.error("Error while trying to convert config field to OptionInstance", e);
-            }
+        @LatticeOption(title = "moulberrystweaks.config.debugging.debug_movement", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean debugMovement = false;
+
+        public static class Inventory {
+            @LatticeOption(title = "moulberrystweaks.config.debugging.inventory.item_component_widget", description = "!!.description")
+            @LatticeWidgetKeybind
+            public transient KeyMapping itemComponentWidgetKeybind = null;
+
+            @LatticeOption(title = "moulberrystweaks.config.debugging.inventory.packet_debug_widget", description = "!!.description")
+            @LatticeWidgetKeybind
+            public transient KeyMapping packetDebugWidgetKeybind = null;
         }
+    }
 
-        return options.toArray(new OptionInstance[0]);
+    @LatticeCategory(name = "moulberrystweaks.config.commands")
+    public Commands commands = new Commands();
+
+    public static class Commands {
+        @LatticeOption(title = "moulberrystweaks.config.commands.auto_vanish_players", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean autoVanishPlayers = true;
+
+        @LatticeOption(title = "moulberrystweaks.config.commands.dump_held_json", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean dumpHeldJson = false;
+
+        @LatticeOption(title = "moulberrystweaks.config.commands.generate_font_width_table", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean generateFontWidthTable = false;
+
+        @LatticeOption(title = "moulberrystweaks.config.commands.dump_player_attributes", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean dumpPlayerAttributes = false;
+
+        @LatticeOption(title = "moulberrystweaks.config.commands.debug_render", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean debugRender = false;
+
+        @LatticeWidgetMessage
+        @LatticeHideIf(function = "hideRequiresRelogMessage", frequency = LatticeDynamicFrequency.EVERY_TICK)
+        public transient Component requiresRelogMessage = Component.literal("Relog is required in order to reload commands").withStyle(ChatFormatting.RED);
+
+        private boolean hideRequiresRelogMessage() {
+            return Minecraft.getInstance().player == null ||
+                (this.autoVanishPlayers == MoulberrysTweaks.autoVanishPlayersRegistered &&
+                this.dumpHeldJson == MoulberrysTweaks.dumpHeldJsonRegistered &&
+                this.generateFontWidthTable == MoulberrysTweaks.generateFontWidthTableRegistered &&
+                this.dumpPlayerAttributes == MoulberrysTweaks.dumpPlayerAttributesRegistered &&
+                this.debugRender == MoulberrysTweaks.debugRenderRegistered);
+        }
+    }
+
+    public static MoulberrysTweaksConfig loadFromDefaultFolder() {
+        Path configFolder = FabricLoader.getInstance().getConfigDir().resolve("moulberrystweaks");
+        return tryLoadFromFolder(configFolder);
     }
 
     public static MoulberrysTweaksConfig tryLoadFromFolder(Path configFolder) {
-        Path primary = configFolder.resolve("moulberrystweaks.json");
-        Path backup = configFolder.resolve(".moulberrystweaks.json.backup");
+        if (Files.exists(configFolder)) {
+            Path primary = configFolder.resolve("moulberrystweaks.json");
+            Path backup = configFolder.resolve(".moulberrystweaks.json.backup");
 
-        if (Files.exists(primary)) {
-            try {
-                return load(primary);
-            } catch (Exception e) {
-                MoulberrysTweaks.LOGGER.error("Failed to load config from {}", primary, e);
+            if (Files.exists(primary)) {
+                try {
+                    return load(primary);
+                } catch (Exception e) {
+                    MoulberrysTweaks.LOGGER.error("Failed to load config from {}", primary, e);
+                }
+            }
+
+            if (Files.exists(backup)) {
+                try {
+                    return load(backup);
+                } catch (Exception e) {
+                    MoulberrysTweaks.LOGGER.error("Failed to load config from {}", backup, e);
+                }
             }
         }
 
-        if (Files.exists(backup)) {
-            try {
-                return load(backup);
-            } catch (Exception e) {
-                MoulberrysTweaks.LOGGER.error("Failed to load config from {}", backup, e);
-            }
-        }
 
         return new MoulberrysTweaksConfig();
     }
 
     public void saveToDefaultFolder() {
         Path configFolder = FabricLoader.getInstance().getConfigDir().resolve("moulberrystweaks");
+        if (!Files.exists(configFolder)) {
+            try {
+                Files.createDirectories(configFolder);
+            } catch (IOException ignored) {}
+        }
         this.saveToFolder(configFolder);
     }
 

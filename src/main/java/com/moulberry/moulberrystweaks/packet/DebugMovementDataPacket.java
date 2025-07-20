@@ -7,7 +7,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 public record DebugMovementDataPacket(DebugMovementData debugMovementData) implements CustomPacketPayload {
-    public static final Type<DebugMovementDataPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("devutils", "debug_velocities"));
+    public static final ResourceLocation PACKET_ID = ResourceLocation.fromNamespaceAndPath("moulberrystweaks", "debug_movement_data");
+    public static final Type<DebugMovementDataPacket> TYPE = new Type<>(PACKET_ID);
 
     public static final StreamCodec<FriendlyByteBuf, DebugMovementDataPacket> STREAM_CODEC = new DebugMovementDataPacketStreamCodec();
 

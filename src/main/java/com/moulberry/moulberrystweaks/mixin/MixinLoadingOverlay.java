@@ -32,24 +32,24 @@ public class MixinLoadingOverlay {
 
     @Inject(method = "render", at = @At("RETURN"))
     public void render(GuiGraphics guiGraphics, int i, int j, float f, CallbackInfo ci) {
-        if (MoulberrysTweaks.config.fastLoadingOverlay && this.fadeOutStart != -1L) {
+        if (MoulberrysTweaks.config.loadingOverlay.fast && this.fadeOutStart != -1L) {
             this.minecraft.setOverlay(null);
         }
     }
 
     @WrapWithCondition(method = "render", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/CommandEncoder;clearColorTexture(Lcom/mojang/blaze3d/textures/GpuTexture;I)V", remap = false))
     public boolean renderShouldClear(CommandEncoder instance, GpuTexture texture, int argb) {
-        return !MoulberrysTweaks.config.transparentLoadingOverlay || Minecraft.getInstance().player == null;
+        return !MoulberrysTweaks.config.loadingOverlay.transparent || Minecraft.getInstance().player == null;
     }
 
     @WrapWithCondition(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;blit(Ljava/util/function/Function;Lnet/minecraft/resources/ResourceLocation;IIFFIIIIIII)V"))
     public boolean renderShouldBlit(GuiGraphics instance, Function<ResourceLocation, RenderType> function, ResourceLocation resourceLocation, int i, int j, float f, float g, int k, int l, int m, int n, int o, int p, int q) {
-        return !MoulberrysTweaks.config.transparentLoadingOverlay || Minecraft.getInstance().player == null;
+        return !MoulberrysTweaks.config.loadingOverlay.transparent || Minecraft.getInstance().player == null;
     }
 
     @WrapOperation(method = "render", at = @At(value = "FIELD", target = "Lnet/minecraft/client/gui/screens/LoadingOverlay;fadeIn:Z"))
     public boolean renderShouldFadeIn(LoadingOverlay instance, Operation<Boolean> original) {
-        if (MoulberrysTweaks.config.transparentLoadingOverlay && Minecraft.getInstance().player != null) {
+        if (MoulberrysTweaks.config.loadingOverlay.transparent && Minecraft.getInstance().player != null) {
             return false;
         }
         return original.call(instance);
