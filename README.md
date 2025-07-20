@@ -2,14 +2,6 @@ A collection of client-side tweaks, primarily useful for developers and creators
 
 Note: Most features are disabled by default. Run /moulberrystweaks to access the config and enable the features that you want.
 
-# Video showcase (1.0.2)
-
-<iframe width="280" height="157" src="https://www.youtube-nocookie.com/embed/tkA7_r8xhYM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-# Item Component & Inventory Packet viewers
-
-![Item Component and Inventory Packet viewers](https://cdn.modrinth.com/data/cached_images/89b5d4a7459b88781705ad86d1f762036d2f34fb.png)
-
 # Features
 - Gameplay
     - Confirm Disconnect Button
