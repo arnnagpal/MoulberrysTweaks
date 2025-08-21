@@ -3,6 +3,7 @@ package com.moulberry.moulberrystweaks.mixin.inventorywidgets;
 import com.moulberry.moulberrystweaks.widget.ActiveWidgets;
 import com.moulberry.moulberrystweaks.widget.FloatingTextWidget;
 import com.moulberry.moulberrystweaks.widget.PacketViewerWidget;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.Connection;
@@ -19,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinConnection {
 
     @Inject(method = "doSendPacket", at = @At("HEAD"))
-    public void doSendPacket(Packet<?> packet, @Nullable PacketSendListener sendListener, boolean flush, CallbackInfo ci) {
+    public void doSendPacket(Packet<?> packet, @Nullable ChannelFutureListener sendListener, boolean flush, CallbackInfo ci) {
         if (ActiveWidgets.logPackets && Minecraft.getInstance().player != null && (Object)this == Minecraft.getInstance().player.connection.getConnection()) {
             for (FloatingTextWidget widget : ActiveWidgets.activeWidgets) {
                 if (widget instanceof PacketViewerWidget packetViewerWidget) {

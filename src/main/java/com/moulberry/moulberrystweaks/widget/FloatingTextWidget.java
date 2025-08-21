@@ -1,12 +1,14 @@
 package com.moulberry.moulberrystweaks.widget;
 
 import com.google.common.hash.HashCode;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.moulberry.moulberrystweaks.formatting.FormattedSnbtPrinter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.TypedDataComponent;
@@ -223,10 +225,6 @@ public class FloatingTextWidget {
                 this.updateScrollOffset(false);
             }
 
-            PoseStack poseStack = guiGraphics.pose();
-            poseStack.pushPose();
-            poseStack.translate(0, 0, 1000);
-
             guiGraphics.enableScissor(this.windowX + 6, this.windowY + 6, this.windowX+this.windowWidth - 6, this.windowY+this.windowHeight - 6);
 
             int y = this.windowY + PADDING - (int) this.scrollOffset;
@@ -251,14 +249,16 @@ public class FloatingTextWidget {
                     hoveredStyle = this.font.getSplitter().componentStyleAtWidth(line, mouseX - (this.windowX + PADDING));
                 }
 
-                int lineWidth = guiGraphics.drawString(this.font, Language.getInstance().getVisualOrder(line), this.windowX + PADDING, y, -1);
+                var formattedCharSequence = Language.getInstance().getVisualOrder(line);
+                guiGraphics.drawString(this.font, formattedCharSequence, this.windowX + PADDING, y, -1);
+                int lineWidth = this.font.width(formattedCharSequence);
                 y += this.font.lineHeight;
                 maxX = Math.max(maxX, lineWidth);
             }
 
             guiGraphics.disableScissor();
 
-            guiGraphics.blitSprite(RenderType::guiTextured, ResourceLocation.fromNamespaceAndPath("minecraft", "popup/background"),
+            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, ResourceLocation.fromNamespaceAndPath("minecraft", "popup/background"),
                 this.windowX, this.windowY, this.windowWidth, this.windowHeight);
 
             guiGraphics.drawString(this.font, this.name, this.windowX+10, this.windowY-this.font.lineHeight, -1);
@@ -266,8 +266,6 @@ public class FloatingTextWidget {
             if (hoveredStyle != null) {
                 guiGraphics.renderComponentHoverEffect(this.font, hoveredStyle, mouseX, mouseY);
             }
-
-            poseStack.popPose();
         }
     }
 

@@ -3,6 +3,7 @@ package com.moulberry.moulberrystweaks.mixin.latency;
 import com.moulberry.moulberrystweaks.DelayedConnectionTask;
 import com.moulberry.moulberrystweaks.MoulberrysTweaks;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -52,7 +53,7 @@ public abstract class MixinConnection {
     private @Nullable DisconnectionDetails disconnectionDetails;
 
     @Shadow
-    protected abstract void doSendPacket(Packet<?> packet, @Nullable PacketSendListener sendListener, boolean flush);
+    protected abstract void doSendPacket(Packet<?> packet, @Nullable ChannelFutureListener sendListener, boolean flush);
     @Shadow
     protected abstract void channelRead0(ChannelHandlerContext context, Packet<?> packet);
 
@@ -92,7 +93,7 @@ public abstract class MixinConnection {
     }
 
     @Inject(method = "doSendPacket", at = @At("HEAD"), cancellable = true)
-    public void delayDoSendPacket(Packet<?> packet, @Nullable PacketSendListener sendListener, boolean flush, CallbackInfo ci) {
+    public void delayDoSendPacket(Packet<?> packet, @Nullable ChannelFutureListener sendListener, boolean flush, CallbackInfo ci) {
         if (!this.doTaskDelay) {
             return;
         }

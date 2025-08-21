@@ -1,5 +1,6 @@
 package com.moulberry.moulberrystweaks.debugrender.shapes;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.moulberry.moulberrystweaks.debugrender.GuiRenderContext;
@@ -11,6 +12,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.SkipPacketDecoderException;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector4f;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -23,8 +25,8 @@ public sealed interface DebugShape permits DebugShapeBox, DebugShapeEllipsoid, D
     int FLAG_NO_SHADE = 8;
     int FLAG_SHOW_AXIS = 16;
 
-    float[] WHITE = new float[]{1f, 1f, 1f, 1f};
-    float[] QUARTER_OPACITY = new float[]{1f, 1f, 1f, 0.25f};
+    Vector4f WHITE = new Vector4f(1f, 1f, 1f, 1f);
+    Vector4f QUARTER_OPACITY = new Vector4f(1f, 1f, 1f, 0.25f);
 
     enum RenderMethod {
         F3_TEXT_LEFT,
@@ -34,7 +36,7 @@ public sealed interface DebugShape permits DebugShapeBox, DebugShapeEllipsoid, D
         WORLD_CACHED
     }
 
-    record RenderJob(MeshData meshData, RenderType renderType, float[] colour) {
+    record RenderJob(MeshData meshData, RenderType renderType, Vector4f colour) {
     }
 
     RenderMethod renderMethod();

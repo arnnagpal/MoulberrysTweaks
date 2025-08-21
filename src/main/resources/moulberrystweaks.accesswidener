@@ -1,2 +1,4 @@
 accessWidener	v1	named
 accessible field net/minecraft/client/gui/Font fonts Ljava/util/function/Function;
+accessible field net/minecraft/client/renderer/GameRenderer fogRenderer Lnet/minecraft/client/renderer/fog/FogRenderer;
+accessible field net/minecraft/client/renderer/RenderType$CompositeRenderType renderPipeline Lcom/mojang/blaze3d/pipeline/RenderPipeline;

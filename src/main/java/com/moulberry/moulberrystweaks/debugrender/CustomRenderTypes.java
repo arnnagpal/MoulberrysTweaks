@@ -57,6 +57,14 @@ public class CustomRenderTypes {
         );
     });
 
+    public static final Function<Double, RenderType.CompositeRenderType> DEBUG_LINE = Util.memoize(width -> RenderType.create(
+        "moulberrystweaks/debug_line",
+        1536,
+        RenderPipelines.LINES,
+        RenderType.CompositeState.builder().setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(width))).createCompositeState(false)
+    ));
+
+
     private static final RenderPipeline PIPELINE_LINES_WITHOUT_DEPTH = RenderPipelines.register(
         RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
                       .withLocation(ResourceLocation.fromNamespaceAndPath("moulberrystweaks", "pipeline/lines_without_depth"))

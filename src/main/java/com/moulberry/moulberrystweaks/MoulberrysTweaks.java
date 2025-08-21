@@ -30,8 +30,8 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.C2SPlayChannelEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
@@ -319,7 +319,7 @@ public class MoulberrysTweaks implements ModInitializer {
             setLatencyRegistered = config.commands.setLatency;
             if (config.commands.setLatency) {
                 command = ClientCommandManager.literal("setlatency")
-                                              .requires(source -> source.getPlayer() != null && source.hasPermission(2))
+                                              .requires(source -> source.getPlayer() != null && source.getPlayer().hasPermissions(2))
                                               .then(ClientCommandManager.argument("latency", IntegerArgumentType.integer(0, 5000))
                                               .executes(commandContext -> {
                                                   additionalLatencyMs = IntegerArgumentType.getInteger(commandContext, "latency");
@@ -351,9 +351,9 @@ public class MoulberrysTweaks implements ModInitializer {
             DebugRenderManager.tick();
         });
 
-        HudLayerRegistrationCallback.EVENT.register(layeredDrawer -> layeredDrawer.attachLayerAfter(IdentifiedLayer.DEBUG, ResourceLocation.fromNamespaceAndPath("moulberrystweaks", "after_debug"), (guiGraphics, tickCounter) -> {
+        HudElementRegistry.attachElementAfter(VanillaHudElements.DEBUG, ResourceLocation.fromNamespaceAndPath("moulberrystweaks", "after_debug"), (guiGraphics, tickCounter) -> {
             DebugRenderManager.renderGui(guiGraphics);
-        }));
+        });
 	}
 
     private static int writeFontWidths(CommandContext<FabricClientCommandSource> cmd) {

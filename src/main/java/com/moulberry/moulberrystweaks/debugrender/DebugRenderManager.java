@@ -1,11 +1,13 @@
 package com.moulberry.moulberrystweaks.debugrender;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.moulberry.moulberrystweaks.debugrender.shapes.DebugShape;
@@ -14,16 +16,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.FogParameters;
+import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -237,6 +242,10 @@ public class DebugRenderManager {
         }
     }
 
+    public interface DrawConsumer {
+        void addDraw(RenderPass.Draw<GpuBufferSlice[]> draw, RenderType renderType);
+    }
+
     public static void renderWorld(PoseStack poseStack, Camera camera) {
         RenderSystem.assertOnRenderThread();
 
@@ -258,38 +267,42 @@ public class DebugRenderManager {
 
         List<RenderedShapeInstance> worldCached = sortedShapeInstancesByRenderMethod.get(DebugShape.RenderMethod.WORLD_CACHED);
         if (worldCached != null && !worldCached.isEmpty()) {
-            FogParameters oldFog = RenderSystem.getShaderFog();
-            RenderSystem.setShaderFog(FogParameters.NO_FOG);
+            GpuBufferSlice oldFog = RenderSystem.getShaderFog();
+            RenderSystem.setShaderFog(Minecraft.getInstance().gameRenderer.fogRenderer.getBuffer(FogRenderer.FogMode.NONE));
 
-            float[] modelViewMat = poseStack.last().pose().get(new float[16]);
+            Matrix4f modelViewMat = poseStack.last().pose();
 
-            LinkedHashMap<RenderType, List<RenderPass.Draw>> drawsForRenderType = new LinkedHashMap<>();
+            List<DynamicUniforms.Transform> transforms = new ArrayList<>();
+            LinkedHashMap<RenderType, List<RenderPass.Draw<GpuBufferSlice[]>>> drawsForRenderType = new LinkedHashMap<>();
 
             for (RenderedShapeInstance instance : worldCached) {
                 if (instance.resourceLocation != null && hiddenNamespaces.contains(instance.resourceLocation.getNamespace())) {
                     continue;
                 }
 
-                instance.renderWorldCached(camera, modelViewMat, (draw, renderType) -> {
+                instance.renderWorldCached(camera, modelViewMat, transforms, (draw, renderType) -> {
                     drawsForRenderType.computeIfAbsent(renderType, k -> new ArrayList<>()).add(draw);
                 });
             }
 
-            for (Map.Entry<RenderType, List<RenderPass.Draw>> entry : drawsForRenderType.entrySet()) {
+            GpuBufferSlice[] gpuBufferSlices = RenderSystem.getDynamicUniforms().writeTransforms(transforms.toArray(new DynamicUniforms.Transform[0]));
+
+            RenderTarget renderTarget = Minecraft.getInstance().getMainRenderTarget();
+            GpuTextureView colour = renderTarget.getColorTextureView();
+            GpuTextureView depth = renderTarget.getDepthTextureView();
+
+            for (Map.Entry<RenderType, List<RenderPass.Draw<GpuBufferSlice[]>>> entry : drawsForRenderType.entrySet()) {
                 RenderType renderType = entry.getKey();
-                List<RenderPass.Draw> draws = entry.getValue();
+                List<RenderPass.Draw<GpuBufferSlice[]>> draws = entry.getValue();
 
                 int maxIndex = 0;
-                for (RenderPass.Draw draw : draws) {
+                for (RenderPass.Draw<GpuBufferSlice[]> draw : draws) {
                     if (draw.indexBuffer() == null) {
                         maxIndex = Math.max(maxIndex, draw.indexCount());
                     }
                 }
 
-                RenderPipeline renderPipeline = renderType.getRenderPipeline();
-                RenderTarget renderTarget = Minecraft.getInstance().getMainRenderTarget();
-                GpuTexture colour = renderTarget.getColorTexture();
-                GpuTexture depth = renderTarget.getDepthTexture();
+                RenderPipeline renderPipeline = ((RenderType.CompositeRenderType)renderType).renderPipeline;
 
                 RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(renderType.mode());
                 GpuBuffer sharedIndexBuffer = maxIndex == 0 ? null : sequentialBuffer.getBuffer(maxIndex);
@@ -299,9 +312,10 @@ public class DebugRenderManager {
 
                 try (RenderPass renderPass = RenderSystem.getDevice()
                                                          .createCommandEncoder()
-                                                         .createRenderPass(colour, OptionalInt.empty(), depth, OptionalDouble.empty())) {
+                                                         .createRenderPass(() -> "Debug Render Pass", colour, OptionalInt.empty(), depth, OptionalDouble.empty())) {
                     renderPass.setPipeline(renderPipeline);
-                    renderPass.drawMultipleIndexed(draws, sharedIndexBuffer, sharedIndexType);
+                    RenderSystem.bindDefaultUniforms(renderPass);
+                    renderPass.drawMultipleIndexed(draws, sharedIndexBuffer, sharedIndexType, gpuBufferSlices.length == 0 ? List.of() : List.of("DynamicTransforms"), gpuBufferSlices);
                 }
 
                 renderType.clearRenderState();

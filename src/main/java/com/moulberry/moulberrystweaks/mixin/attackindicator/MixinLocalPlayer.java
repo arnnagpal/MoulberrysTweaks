@@ -30,8 +30,8 @@ public abstract class MixinLocalPlayer extends Player implements LocalPlayerExt 
     @Unique
     private int visualAttackStrengthTicker = 0;
 
-    public MixinLocalPlayer(Level level, BlockPos blockPos, float f, GameProfile gameProfile) {
-        super(level, blockPos, f, gameProfile);
+    public MixinLocalPlayer(Level level, GameProfile gameProfile) {
+        super(level, gameProfile);
     }
 
     @Inject(method = "swing", at = @At("HEAD"))

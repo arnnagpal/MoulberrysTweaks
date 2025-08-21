@@ -161,10 +161,11 @@ public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionf rotation, int fa
 
             try (MeshData meshData = bufferBuilder.build()) {
                 if (showThroughWalls && (flags & FLAG_FULL_OPACITY_BEHIND_WALLS) == 0) {
-                    render.accept(new RenderJob(meshData, RenderType.debugLine(this.lineThickness), WHITE));
+                    render.accept(new RenderJob(meshData, CustomRenderTypes.DEBUG_LINE.apply((double) this.lineThickness), WHITE));
                     render.accept(new RenderJob(meshData, CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH.apply((double) this.lineThickness), QUARTER_OPACITY));
                 } else {
-                    RenderType renderType = showThroughWalls ? CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH.apply((double) this.lineThickness) : RenderType.debugLine(this.lineThickness);
+                    var function = showThroughWalls ? CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH : CustomRenderTypes.DEBUG_LINE;
+                    RenderType renderType = function.apply((double) this.lineThickness);
                     render.accept(new RenderJob(meshData, renderType, WHITE));
                 }
             }
