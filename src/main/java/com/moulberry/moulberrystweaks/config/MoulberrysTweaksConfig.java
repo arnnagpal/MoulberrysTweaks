@@ -119,6 +119,10 @@ public class MoulberrysTweaksConfig {
         @LatticeWidgetButton
         public boolean debugRender = false;
 
+        @LatticeOption(title = "moulberrystweaks.config.commands.set_latency", description = "!!.description")
+        @LatticeWidgetButton
+        public boolean setLatency = false;
+
         @LatticeWidgetMessage
         @LatticeHideIf(function = "hideRequiresRelogMessage", frequency = LatticeDynamicFrequency.EVERY_TICK)
         public transient Component requiresRelogMessage = Component.literal("Relog is required in order to reload commands").withStyle(ChatFormatting.RED);
@@ -129,7 +133,8 @@ public class MoulberrysTweaksConfig {
                 this.dumpHeldJson == MoulberrysTweaks.dumpHeldJsonRegistered &&
                 this.generateFontWidthTable == MoulberrysTweaks.generateFontWidthTableRegistered &&
                 this.dumpPlayerAttributes == MoulberrysTweaks.dumpPlayerAttributesRegistered &&
-                this.debugRender == MoulberrysTweaks.debugRenderRegistered);
+                this.debugRender == MoulberrysTweaks.debugRenderRegistered &&
+                this.setLatency == MoulberrysTweaks.setLatencyRegistered);
         }
     }
 
