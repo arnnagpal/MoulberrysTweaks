@@ -72,7 +72,6 @@ public class MixinAbstractContainerScreen {
             if (removed) {
                 ActiveWidgets.logPackets = false;
             } else {
-                System.out.println("Adding packet viewer");
                 ActiveWidgets.activeWidgets.add(new PacketViewerWidget());
                 ActiveWidgets.logPackets = true;
             }
