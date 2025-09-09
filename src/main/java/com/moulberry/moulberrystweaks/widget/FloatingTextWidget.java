@@ -225,6 +225,9 @@ public class FloatingTextWidget {
                 this.updateScrollOffset(false);
             }
 
+            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, ResourceLocation.fromNamespaceAndPath("minecraft", "popup/background"),
+                    this.windowX, this.windowY, this.windowWidth, this.windowHeight);
+
             guiGraphics.enableScissor(this.windowX + 6, this.windowY + 6, this.windowX+this.windowWidth - 6, this.windowY+this.windowHeight - 6);
 
             int y = this.windowY + PADDING - (int) this.scrollOffset;
@@ -257,9 +260,6 @@ public class FloatingTextWidget {
             }
 
             guiGraphics.disableScissor();
-
-            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, ResourceLocation.fromNamespaceAndPath("minecraft", "popup/background"),
-                this.windowX, this.windowY, this.windowWidth, this.windowHeight);
 
             guiGraphics.drawString(this.font, this.name, this.windowX+10, this.windowY-this.font.lineHeight, -1);
 

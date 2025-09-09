@@ -8,6 +8,7 @@
   "client": [
     "MixinLoadingOverlay",
     "MixinTransferableSelectionListPackEntry",
+    "addopenreportbutton.MixinDisconnectedScreen",
     "attackindicator.MixinGui",
     "attackindicator.MixinLocalPlayer",
     "attackindicator.MixinPlayer",
@@ -22,8 +23,8 @@
     "debugmovement.MixinLivingEntity",
     "debugshape.MixinDebugScreenOverlay",
     "debugshape.MixinLevelRenderer",
-    "addopenreportbutton.MixinDisconnectedScreen",
     "inventorywidgets.MixinAbstractContainerScreen",
+    "inventorywidgets.MixinAbstractRecipeBookScreen",
     "inventorywidgets.MixinConnection",
     "latency.MixinConnection",
     "packetexceptionlogging.MixinConnection",

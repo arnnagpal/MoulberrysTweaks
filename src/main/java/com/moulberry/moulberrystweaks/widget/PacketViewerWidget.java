@@ -117,7 +117,7 @@ public class PacketViewerWidget extends FloatingTextWidget {
         } else {
             long currentTime = System.currentTimeMillis();
             if (currentTime - lastPacketTime > 500) {
-                lines.add(0, Component.literal("...").withStyle(ChatFormatting.GRAY));
+                lines.addFirst(Component.literal("...").withStyle(ChatFormatting.GRAY));
             }
             lastPacketTime = currentTime;
         }

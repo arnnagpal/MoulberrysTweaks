@@ -7,6 +7,7 @@ import com.moulberry.moulberrystweaks.widget.FloatingTextWidget;
 import com.moulberry.moulberrystweaks.widget.PacketViewerWidget;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.world.inventory.Slot;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -71,6 +72,7 @@ public class MixinAbstractContainerScreen {
             if (removed) {
                 ActiveWidgets.logPackets = false;
             } else {
+                System.out.println("Adding packet viewer");
                 ActiveWidgets.activeWidgets.add(new PacketViewerWidget());
                 ActiveWidgets.logPackets = true;
             }
@@ -116,5 +118,4 @@ public class MixinAbstractContainerScreen {
             widget.render(guiGraphics, mouseX, mouseY);
         }
     }
-
 }
